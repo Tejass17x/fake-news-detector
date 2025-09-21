@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Professional Fake News Detector - Live Dashboard</title>
+    
+    <!-- Enhanced CSS Libraries -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
+    
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            --info-color: #3b82f6;
+            --dark-bg: #1f2937;
+            --card-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+
+        body {
+            background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+        }
+
+        .navbar {
+            background: var(--primary-gradient);
+            box-shadow: 0 2px 20px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.5rem;
+            color: white !important;
+        }
+
+        .live-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(16, 185, 129, 0.2);
+            padding: 6px 12px;
+            border-radius: 20px;
+            color: var(--success-color);
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .live-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--success-color);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .card {
+            border: none;
+            border-radius: 16px;
+            box-shadow: var(--card-shadow);
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.95);
+            transition: all 0.3s ease;
+            margin-bottom: 2rem;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.15);
+        }
+
+        .card-header {
+            background: transparent;
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+            padding: 1.5rem 1.5rem 1rem;
+            border-radius: 16px 16px 0 0 !important;
+        }
+
+        .card-title {
+            font-weight: 600;
+            color: var(--dark-bg);
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .stat-card {
+            text-align: center;
+            padding: 2rem 1.5rem;
+            height: 100%;
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stat-label {
+            color: #6b7280;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-size: 0.9rem;
+        }
+
+        .analysis-input {
+            background: rgba(255, 255, 255, 0.9);
+            border: 2px solid rgba(102, 126, 234, 0.2);
+            border-radius: 12px;
+            padding: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .analysis-input:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            outline: none;
+        }
+
+        .btn-primary {
+            background: var(--primary-gradient);
+            border: none;
+            border-radius: 12px;
+            padding: 12px 24px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-success {
+            background: var(--success-color);
+            border: none;
+            border-radius: 12px;
+            padding: 12px 24px;
+            font-weight: 600;
+        }
+
+        .btn-danger {
+            background: var(--danger-color);
+            border: none;
+            border-radius: 12px;
+            padding: 12px 24px;
+            font-weight: 600;
+        }
+
+        .credibility-badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .credibility-high { background: rgba(16, 185, 129, 0.2); color: var(--success-color); }
+        .credibility-medium { background: rgba(245, 158, 11, 0.2); color: var(--warning-color); }
+        .credibility-low { background: rgba(239, 68, 68, 0.2); color: var(--danger-color); }
+
+        .analysis-item {
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-left: 4px solid var(--primary-gradient);
+            transition: all 0.3s ease;
+        }
+
+        .analysis-item:hover {
+            background: rgba(255, 255, 255, 1);
+            transform: translateX(5px);
+        }
+
+        .live-feed {
+            max-height: 400px;
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: #667eea #f1f5f9;
+        }
+
+        .live-feed::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .live-feed::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+
+        .live-feed::-webkit-scrollbar-thumb {
+            background: #667eea;
+            border-radius: 3px;
+        }
+
+        .loading {
+            display: none;
+        }
+
+        .spinner-border {
+            width: 1.2rem;
+            height: 1.2rem;
+        }
+
+        .modal-content {
+            border: none;
+            border-radius: 16px;
+            box-shadow: var(--card-shadow);
+        }
+
+        .modal-header {
+            background: var(--primary-gradient);
+            color: white;
+            border-radius: 16px 16px 0 0;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin: 1rem 0;
+        }
+
+        .alert {
+            border: none;
+            border-radius: 12px;
+            font-weight: 500;
+        }
+
+        .form-control, .form-select {
+            border-radius: 12px;
+            border: 2px solid rgba(0,0,0,0.1);
+            padding: 12px 16px;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .nav-tabs .nav-link {
+            border-radius: 12px 12px 0 0;
+            color: #6b7280;
+            font-weight: 500;
+            border: none;
+            padding: 12px 20px;
+        }
+
+        .nav-tabs .nav-link.active {
+            background: var(--primary-gradient);
+            color: white;
+        }
+
+        .monitoring-controls {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        @media (max-width: 768px) {
+            .monitoring-controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .stat-number {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-shield-alt me-2"></i>
+                Professional Fake News Detector
+            </a>
+            <div class="live-indicator" id="liveIndicator">
+                <div class="live-dot"></div>
+                <span id="liveStatus">Ready</span>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <!-- Statistics Dashboard -->
+        <div class="row">
+            <div class="col-md-2">
+                <div class="card stat-card">
+                    <div class="stat-number" id="totalAnalyzed">{{ live_stats.total_analyzed }}</div>
+                    <div class="stat-label">Total Analyzed</div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="card stat-card">
+                    <div class="stat-number text-success" id="highCredibility">{{ live_stats.high_credibility }}</div>
+                    <div class="stat-label">High Credibility</div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="card stat-card">
+                    <div class="stat-number text-warning" id="mediumCredibility">{{ live_stats.medium_credibility }}</div>
+                    <div class="stat-label">Medium</div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="card stat-card">
+                    <div class="stat-number text-danger" id="lowCredibility">{{ live_stats.low_credibility }}</div>
+                    <div class="stat-label">Low/Suspicious</div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="card stat-card">
+                    <div class="stat-number text-info" id="warningsDetected">{{ live_stats.warnings_detected }}</div>
+                    <div class="stat-label">Warnings</div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="card stat-card">
+                    <div class="stat-number text-secondary" id="biasIndicators">{{ live_stats.bias_indicators }}</div>
+                    <div class="stat-label">Bias Flags</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Dashboard -->
+        <div class="row">
+            <!-- Analysis Input Panel -->
+            <div class="col-lg-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title">
+                            <i class="fas fa-search"></i>
+                            Analyze News Content
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="analysisForm">
+                            <!-- Analysis Type -->
+                            <div class="row mb-3">
+                                <div class="col-6">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="analysisType" id="urlType" value="url" checked>
+                                        <label class="form-check-label fw-bold" for="urlType">
+                                            <i class="fas fa-link me-2"></i>Analyze URL
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="analysisType" id="textType" value="text">
+                                        <label class="form-check-label fw-bold" for="textType">
+                                            <i class="fas fa-file-text me-2"></i>Analyze Text
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- URL Input -->
+                            <div id="urlInput" class="input-section">
+                                <div class="mb-3">
+                                    <label for="articleUrl" class="form-label fw-bold">Article URL</label>
+                                    <input type="url" class="form-control analysis-input" id="articleUrl" 
+                                           placeholder="https://example.com/news/article">
+                                    <div class="form-text">Enter the complete URL of the news article</div>
+                                </div>
+                            </div>
+
+                            <!-- Text Input -->
+                            <div id="textInput" class="input-section" style="display: none;">
+                                <div class="mb-3">
+                                    <label for="articleTitle" class="form-label fw-bold">Article Title/Headline</label>
+                                    <input type="text" class="form-control analysis-input" id="articleTitle" 
+                                           placeholder="Enter the news headline">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="articleContent" class="form-label fw-bold">Article Content (Optional)</label>
+                                    <textarea class="form-control analysis-input" id="articleContent" rows="6" 
+                                              placeholder="Paste the full article content here for more detailed analysis"></textarea>
+                                </div>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary w-100">
+                                <span class="loading">
+                                    <span class="spinner-border me-2" role="status"></span>
+                                    Analyzing...
+                                </span>
+                                <span class="not-loading">
+                                    <i class="fas fa-search me-2"></i>Analyze Now
+                                </span>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Live Monitoring Controls -->
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title">
+                            <i class="fas fa-broadcast-tower"></i>
+                            Live News Monitoring
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="monitoring-controls">
+                            <button id="startMonitoring" class="btn btn-success">
+                                <i class="fas fa-play me-2"></i>Start Live Monitoring
+                            </button>
+                            <button id="stopMonitoring" class="btn btn-danger" style="display: none;">
+                                <i class="fas fa-stop me-2"></i>Stop Monitoring
+                            </button>
+                            <div class="ms-auto">
+                                <small class="text-muted">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    Monitoring: BBC, Reuters, AP, CNN, NPR
+                                </small>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <div class="progress" style="height: 6px;">
+                                <div class="progress-bar" role="progressbar" id="monitoringProgress" style="width: 0%"></div>
+                            </div>
+                            <small class="text-muted mt-1 d-block" id="monitoringStatus">Ready to monitor live news feeds</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Results and Live Feed -->
+            <div class="col-lg-6">
+                <!-- Analysis Results -->
+                <div id="resultsSection" class="card" style="display: none;">
+                    <div class="card-header">
+                        <h5 class="card-title">
+                            <i class="fas fa-chart-line"></i>
+                            Analysis Results
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="analysisResults"></div>
+                    </div>
+                </div>
+
+                <!-- Live Feed -->
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-rss"></i>
+                            Live Analysis Feed
+                        </h5>
+                        <button class="btn btn-sm btn-outline-primary" onclick="clearFeed()">
+                            <i class="fas fa-trash me-1"></i>Clear
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div id="liveFeed" class="live-feed">
+                            <div class="text-center text-muted py-4">
+                                <i class="fas fa-satellite-dish fa-2x mb-2"></i>
+                                <p>Start live monitoring to see real-time analysis</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Analyses -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title">
+                            <i class="fas fa-history"></i>
+                            Recent Analyses
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="recentAnalyses">
+                            {% for analysis in recent_analyses %}
+                            <div class="analysis-item">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div class="flex-grow-1">
+                                        <h6 class="mb-1">{{ analysis.title or 'Analysis' }}</h6>
+                                        <small class="text-muted">
+                                            <i class="fas fa-clock me-1"></i>{{ analysis.timestamp }}
+                                            {% if analysis.type == 'live_monitoring' %}
+                                            <span class="badge bg-primary ms-2">LIVE</span>
+                                            {% endif %}
+                                        </small>
+                                    </div>
+                                    <div class="text-end">
+                                        <span class="credibility-badge credibility-{{ analysis.credibility_level.lower() }}">
+                                            {{ analysis.credibility_level }}
+                                        </span>
+                                        <br>
+                                        <small class="text-muted mt-1">
+                                            Score: {{ "%.2f"|format(analysis.credibility_score) }}
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Initialize Socket.IO
+        const socket = io();
+
+        // Global variables
+        let isMonitoring = false;
+
+        // Socket event handlers
+        socket.on('connect', function() {
+            console.log('Connected to server');
+            updateLiveStatus('Connected', 'success');
+        });
+
+        socket.on('disconnect', function() {
+            updateLiveStatus('Disconnected', 'danger');
+        });
+
+        socket.on('new_analysis', function(data) {
+            updateStats(data.stats);
+            addToRecentAnalyses(data.result, 'manual', data.timestamp);
+        });
+
+        socket.on('live_analysis', function(data) {
+            updateStats(data.stats);
+            addToLiveFeed(data);
+            addToRecentAnalyses(data.result, 'live_monitoring', data.timestamp, data.headline);
+        });
+
+        socket.on('stats_update', function(data) {
+            updateStats(data);
+        });
+
+        // Form handling
+        document.querySelectorAll('input[name="analysisType"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                if (this.value === 'url') {
+                    document.getElementById('urlInput').style.display = 'block';
+                    document.getElementById('textInput').style.display = 'none';
+                } else {
+                    document.getElementById('urlInput').style.display = 'none';
+                    document.getElementById('textInput').style.display = 'block';
+                }
+            });
+        });
+
+        document.getElementById('analysisForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            // Show loading state
+            document.querySelector('.loading').style.display = 'inline';
+            document.querySelector('.not-loading').style.display = 'none';
+            document.getElementById('resultsSection').style.display = 'none';
+            
+            const analysisType = document.querySelector('input[name="analysisType"]:checked').value;
+            let requestData = { type: analysisType };
+            
+            if (analysisType === 'url') {
+                requestData.url = document.getElementById('articleUrl').value;
+            } else {
+                requestData.title = document.getElementById('articleTitle').value;
+                requestData.content = document.getElementById('articleContent').value;
+                
+                if (!requestData.title && !requestData.content) {
+                    showError('Please provide either a title or content for analysis');
+                    return;
+                }
+            }
+            
+            try {
+                const response = await fetch('/analyze', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(requestData)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    displayResults(result.result);
+                } else {
+                    showError(result.error || 'Analysis failed');
+                }
+            } catch (error) {
+                showError('Network error: ' + error.message);
+            } finally {
+                // Hide loading state
+                document.querySelector('.loading').style.display = 'none';
+                document.querySelector('.not-loading').style.display = 'inline';
+            }
+        });
+
+        // Live monitoring controls
+        document.getElementById('startMonitoring').addEventListener('click', async function() {
+            try {
+                const response = await fetch('/live-monitoring', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'start' })
+                });
+                
+                const result = await response.json();
+                if (result.status === 'started') {
+                    isMonitoring = true;
+                    updateMonitoringUI(true);
+                    updateLiveStatus('Live Monitoring', 'success');
+                }
+            } catch (error) {
+                showError('Failed to start monitoring: ' + error.message);
+            }
+        });
+
+        document.getElementById('stopMonitoring').addEventListener('click', async function() {
+            try {
+                const response = await fetch('/live-monitoring', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'stop' })
+                });
+                
+                const result = await response.json();
+                if (result.status === 'stopped') {
+                    isMonitoring = false;
+                    updateMonitoringUI(false);
+                    updateLiveStatus('Monitoring Stopped', 'warning');
+                }
+            } catch (error) {
+                showError('Failed to stop monitoring: ' + error.message);
+            }
+        });
+
+        // UI update functions
+        function updateLiveStatus(status, type) {
+            const indicator = document.getElementById('liveIndicator');
+            const statusEl = document.getElementById('liveStatus');
+            statusEl.textContent = status;
+            
+            indicator.className = `live-indicator ${type === 'success' ? 'text-success' : type === 'warning' ? 'text-warning' : 'text-danger'}`;
+        }
+
+        function updateStats(stats) {
+            document.getElementById('totalAnalyzed').textContent = stats.total_analyzed;
+            document.getElementById('highCredibility').textContent = stats.high_credibility;
+            document.getElementById('mediumCredibility').textContent = stats.medium_credibility;
+            document.getElementById('lowCredibility').textContent = stats.low_credibility;
+            document.getElementById('warningsDetected').textContent = stats.warnings_detected;
+            document.getElementById('biasIndicators').textContent = stats.bias_indicators;
+        }
+
+        function updateMonitoringUI(isActive) {
+            document.getElementById('startMonitoring').style.display = isActive ? 'none' : 'block';
+            document.getElementById('stopMonitoring').style.display = isActive ? 'block' : 'none';
+            
+            const progress = document.getElementById('monitoringProgress');
+            const status = document.getElementById('monitoringStatus');
+            
+            if (isActive) {
+                progress.style.width = '100%';
+                progress.classList.add('progress-bar-animated');
+                status.textContent = 'Live monitoring active - analyzing news from multiple sources';
+            } else {
+                progress.style.width = '0%';
+                progress.classList.remove('progress-bar-animated');
+                status.textContent = 'Ready to monitor live news feeds';
+            }
+        }
+
+        function addToLiveFeed(data) {
+            const feed = document.getElementById('liveFeed');
+            
+            // Clear placeholder if it exists
+            if (feed.innerHTML.includes('Start live monitoring')) {
+                feed.innerHTML = '';
+            }
+            
+            const item = document.createElement('div');
+            item.className = 'analysis-item';
+            item.innerHTML = `
+                <div class="d-flex justify-content-between align-items-start">
+                    <div class="flex-grow-1">
+                        <h6 class="mb-1">${data.headline.title}</h6>
+                        <small class="text-muted">
+                            <i class="fas fa-rss me-1"></i>${data.headline.source}
+                            <span class="badge bg-success ms-2">LIVE</span>
+                        </small>
+                    </div>
+                    <div class="text-end">
+                        <span class="credibility-badge credibility-${data.result.credibility_level.toLowerCase()}">
+                            ${data.result.credibility_level}
+                        </span>
+                        <br>
+                        <small class="text-muted mt-1">
+                            Score: ${data.result.credibility_score.toFixed(2)}
+                        </small>
+                    </div>
+                </div>
+            `;
+            
+            feed.insertBefore(item, feed.firstChild);
+            
+            // Keep only last 20 items
+            while (feed.children.length > 20) {
+                feed.removeChild(feed.lastChild);
+            }
+        }
+
+        function addToRecentAnalyses(result, type, timestamp, headline = null) {
+            const container = document.getElementById('recentAnalyses');
+            
+            const item = document.createElement('div');
+            item.className = 'analysis-item';
+            item.innerHTML = `
+                <div class="d-flex justify-content-between align-items-start">
+                    <div class="flex-grow-1">
+                        <h6 class="mb-1">${headline ? headline.title : (result.title || 'Manual Analysis')}</h6>
+                        <small class="text-muted">
+                            <i class="fas fa-clock me-1"></i>${new Date(timestamp).toLocaleString()}
+                            ${type === 'live_monitoring' ? '<span class="badge bg-primary ms-2">LIVE</span>' : ''}
+                        </small>
+                    </div>
+                    <div class="text-end">
+                        <span class="credibility-badge credibility-${result.credibility_level.toLowerCase()}">
+                            ${result.credibility_level}
+                        </span>
+                        <br>
+                        <small class="text-muted mt-1">
+                            Score: ${result.overall_credibility_score.toFixed(2)}
+                        </small>
+                    </div>
+                </div>
+            `;
+            
+            container.insertBefore(item, container.firstChild);
+            
+            // Keep only last 15 items
+            while (container.children.length > 15) {
+                container.removeChild(container.lastChild);
+            }
+        }
+
+        function displayResults(result) {
+            const resultsDiv = document.getElementById('analysisResults');
+            
+            resultsDiv.innerHTML = `
+                <div class="text-center mb-4">
+                    <h3 class="credibility-badge credibility-${result.credibility_level.toLowerCase()}" style="font-size: 1.5rem;">
+                        ${result.credibility_level.toUpperCase()}
+                    </h3>
+                    <div class="row mt-3">
+                        <div class="col-6">
+                            <div class="text-center">
+                                <div class="h4 mb-1">${result.overall_credibility_score.toFixed(2)}/1.00</div>
+                                <small class="text-muted">Credibility Score</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="text-center">
+                                <div class="h4 mb-1">${result.confidence_score.toFixed(2)}/1.00</div>
+                                <small class="text-muted">Confidence</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                ${result.warning_flags.length > 0 ? `
+                <div class="alert alert-warning">
+                    <strong><i class="fas fa-exclamation-triangle me-2"></i>Warning Flags:</strong>
+                    <ul class="mb-0 mt-2">
+                        ${result.warning_flags.map(flag => `<li>${flag}</li>`).join('')}
+                    </ul>
+                </div>
+                ` : ''}
+                
+                ${result.bias_indicators.length > 0 ? `
+                <div class="alert alert-info">
+                    <strong><i class="fas fa-balance-scale me-2"></i>Bias Indicators:</strong>
+                    <ul class="mb-0 mt-2">
+                        ${result.bias_indicators.slice(0, 5).map(indicator => `<li>${indicator}</li>`).join('')}
+                    </ul>
+                </div>
+                ` : ''}
+                
+                <div class="alert alert-primary">
+                    <strong><i class="fas fa-lightbulb me-2"></i>Recommendations:</strong>
+                    <ul class="mb-0 mt-2">
+                        ${result.recommendations.map(rec => `<li>${rec}</li>`).join('')}
+                    </ul>
+                </div>
+            `;
+            
+            document.getElementById('resultsSection').style.display = 'block';
+        }
+
+        function clearFeed() {
+            document.getElementById('liveFeed').innerHTML = `
+                <div class="text-center text-muted py-4">
+                    <i class="fas fa-satellite-dish fa-2x mb-2"></i>
+                    <p>Start live monitoring to see real-time analysis</p>
+                </div>
+            `;
+        }
+
+        function showError(message) {
+            const alert = document.createElement('div');
+            alert.className = 'alert alert-danger alert-dismissible fade show';
+            alert.innerHTML = `
+                <i class="fas fa-exclamation-circle me-2"></i>
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            
+            document.querySelector('.container').insertBefore(alert, document.querySelector('.container').firstChild);
+            
+            setTimeout(() => {
+                if (alert.parentNode) {
+                    alert.parentNode.removeChild(alert);
+                }
+            }, 5000);
+        }
+    </script>
+</body>
+</html>

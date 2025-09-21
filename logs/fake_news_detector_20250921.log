@@ -1,0 +1,33 @@
+2025-09-21 18:12:08,674 - fake_news_detector - INFO - Analysis completed - Credibility: Medium (0.62) - Confidence: 1.00
+2025-09-21 18:12:08,677 - fake_news_detector - WARNING - Analysis produced 3 warning flags
+2025-09-21 18:12:08,678 - fake_news_detector - WARNING -   - Content issue: Very short article
+2025-09-21 18:12:08,678 - fake_news_detector - WARNING -   - Low consensus with other sources
+2025-09-21 18:12:08,678 - fake_news_detector - WARNING -   - Limited source diversity for verification
+2025-09-21 18:20:51,531 - fake_news_detector - INFO - Analysis completed - Credibility: Medium (0.67) - Confidence: 0.80
+2025-09-21 18:20:51,533 - fake_news_detector - WARNING - Analysis produced 2 warning flags
+2025-09-21 18:20:51,533 - fake_news_detector - WARNING -   - Low consensus with other sources
+2025-09-21 18:20:51,533 - fake_news_detector - WARNING -   - Limited source diversity for verification
+2025-09-21 18:21:04,427 - fake_news_detector - INFO - Analysis completed - Credibility: Medium (0.67) - Confidence: 0.80
+2025-09-21 18:21:04,429 - fake_news_detector - WARNING - Analysis produced 2 warning flags
+2025-09-21 18:21:04,430 - fake_news_detector - WARNING -   - Low consensus with other sources
+2025-09-21 18:21:04,430 - fake_news_detector - WARNING -   - Limited source diversity for verification
+2025-09-21 18:21:29,414 - fake_news_detector - INFO - Analysis completed - Credibility: Medium (0.67) - Confidence: 0.80
+2025-09-21 18:21:29,416 - fake_news_detector - WARNING - Analysis produced 2 warning flags
+2025-09-21 18:21:29,417 - fake_news_detector - WARNING -   - Low consensus with other sources
+2025-09-21 18:21:29,417 - fake_news_detector - WARNING -   - Limited source diversity for verification
+2025-09-21 18:22:15,493 - fake_news_detector - INFO - Analysis completed - Credibility: Medium (0.64) - Confidence: 1.00
+2025-09-21 18:22:15,494 - fake_news_detector - WARNING - Analysis produced 2 warning flags
+2025-09-21 18:22:15,495 - fake_news_detector - WARNING -   - Low consensus with other sources
+2025-09-21 18:22:15,495 - fake_news_detector - WARNING -   - Limited source diversity for verification
+2025-09-21 18:22:50,820 - fake_news_detector - INFO - Analysis completed - Credibility: Medium (0.64) - Confidence: 1.00
+2025-09-21 18:22:50,822 - fake_news_detector - WARNING - Analysis produced 2 warning flags
+2025-09-21 18:22:50,822 - fake_news_detector - WARNING -   - Low consensus with other sources
+2025-09-21 18:22:50,823 - fake_news_detector - WARNING -   - Limited source diversity for verification
+2025-09-21 18:23:52,668 - fake_news_detector - INFO - Analysis completed - Credibility: Medium (0.65) - Confidence: 1.00
+2025-09-21 18:23:52,669 - fake_news_detector - WARNING - Analysis produced 2 warning flags
+2025-09-21 18:23:52,670 - fake_news_detector - WARNING -   - Low consensus with other sources
+2025-09-21 18:23:52,670 - fake_news_detector - WARNING -   - Limited source diversity for verification
+2025-09-21 18:25:02,513 - fake_news_detector - INFO - Analysis completed - Credibility: Medium (0.65) - Confidence: 1.00
+2025-09-21 18:25:02,515 - fake_news_detector - WARNING - Analysis produced 2 warning flags
+2025-09-21 18:25:02,515 - fake_news_detector - WARNING -   - Low consensus with other sources
+2025-09-21 18:25:02,516 - fake_news_detector - WARNING -   - Limited source diversity for verification

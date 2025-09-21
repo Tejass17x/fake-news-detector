@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Professional Fake News Detector</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.1.3/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem 0;
+            margin-bottom: 2rem;
+        }
+        .card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+        }
+        .card-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px 15px 0 0 !important;
+        }
+        .btn-analyze {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 25px;
+            padding: 12px 30px;
+            font-weight: 600;
+        }
+        .btn-analyze:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        .credibility-high { color: #28a745; }
+        .credibility-medium { color: #ffc107; }
+        .credibility-low { color: #fd7e14; }
+        .credibility-very-low { color: #dc3545; }
+        .progress {
+            height: 25px;
+            border-radius: 15px;
+        }
+        .result-card {
+            display: none;
+            animation: fadeInUp 0.5s ease-out;
+        }
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .warning-flag {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 8px;
+            padding: 8px 12px;
+            margin: 5px;
+            display: inline-block;
+            font-size: 0.9em;
+        }
+        .bias-indicator {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            border-radius: 8px;
+            padding: 6px 10px;
+            margin: 3px;
+            display: inline-block;
+            font-size: 0.85em;
+        }
+        .recommendation {
+            background-color: #d1ecf1;
+            border: 1px solid #bee5eb;
+            border-radius: 8px;
+            padding: 10px;
+            margin: 8px 0;
+        }
+        .loading {
+            display: none;
+        }
+        .spinner-border {
+            width: 1rem;
+            height: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="container">
+            <h1 class="display-4 mb-0">
+                <i class="fas fa-shield-alt me-3"></i>
+                Professional Fake News Detector
+            </h1>
+            <p class="lead mt-2">Analyze news articles for credibility and bias using advanced AI techniques</p>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Input Form -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="mb-0"><i class="fas fa-search me-2"></i>Analyze News Article</h3>
+            </div>
+            <div class="card-body">
+                <form id="analysisForm">
+                    <!-- Analysis Type Selection -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="analysisType" id="urlType" value="url" checked>
+                                <label class="form-check-label" for="urlType">
+                                    <i class="fas fa-link me-2"></i>Analyze URL
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="analysisType" id="textType" value="text">
+                                <label class="form-check-label" for="textType">
+                                    <i class="fas fa-file-text me-2"></i>Analyze Text
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- URL Input -->
+                    <div id="urlInput" class="input-section">
+                        <div class="mb-3">
+                            <label for="articleUrl" class="form-label">Article URL</label>
+                            <input type="url" class="form-control" id="articleUrl" placeholder="https://example.com/news/article" required>
+                            <div class="form-text">Enter the full URL of the news article you want to analyze</div>
+                        </div>
+                    </div>
+
+                    <!-- Text Input -->
+                    <div id="textInput" class="input-section" style="display: none;">
+                        <div class="mb-3">
+                            <label for="articleTitle" class="form-label">Article Title</label>
+                            <input type="text" class="form-control" id="articleTitle" placeholder="Enter the headline or title">
+                        </div>
+                        <div class="mb-3">
+                            <label for="articleContent" class="form-label">Article Content</label>
+                            <textarea class="form-control" id="articleContent" rows="8" placeholder="Paste the article content here..."></textarea>
+                            <div class="form-text">Provide either title or content (or both) for analysis</div>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-analyze">
+                        <span class="loading">
+                            <span class="spinner-border me-2" role="status" aria-hidden="true"></span>
+                            Analyzing...
+                        </span>
+                        <span class="not-loading">
+                            <i class="fas fa-search me-2"></i>Analyze Article
+                        </span>
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Results Section -->
+        <div id="resultsSection" class="result-card">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="mb-0"><i class="fas fa-chart-line me-2"></i>Analysis Results</h3>
+                </div>
+                <div class="card-body">
+                    <!-- Overall Credibility Score -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h5>Overall Credibility</h5>
+                            <div class="d-flex align-items-center mb-2">
+                                <h2 id="credibilityLevel" class="me-3 mb-0">-</h2>
+                                <div class="flex-grow-1">
+                                    <div class="progress">
+                                        <div id="credibilityProgress" class="progress-bar" role="progressbar" style="width: 0%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <small class="text-muted">Score: <span id="credibilityScore">-</span>/1.00</small>
+                        </div>
+                        <div class="col-md-6">
+                            <h5>Analysis Confidence</h5>
+                            <div class="d-flex align-items-center mb-2">
+                                <div class="flex-grow-1">
+                                    <div class="progress">
+                                        <div id="confidenceProgress" class="progress-bar bg-info" role="progressbar" style="width: 0%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <small class="text-muted">Confidence: <span id="confidenceScore">-</span>/1.00</small>
+                        </div>
+                    </div>
+
+                    <!-- Warning Flags -->
+                    <div id="warningSection" class="mb-4" style="display: none;">
+                        <h5><i class="fas fa-exclamation-triangle text-warning me-2"></i>Warning Flags</h5>
+                        <div id="warningFlags"></div>
+                    </div>
+
+                    <!-- Analysis Details Tabs -->
+                    <ul class="nav nav-tabs mb-3" id="analysisTab" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="source-tab" data-bs-toggle="tab" data-bs-target="#source" type="button" role="tab">
+                                <i class="fas fa-globe me-2"></i>Source
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="content-tab" data-bs-toggle="tab" data-bs-target="#content" type="button" role="tab">
+                                <i class="fas fa-file-text me-2"></i>Content
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="sentiment-tab" data-bs-toggle="tab" data-bs-target="#sentiment" type="button" role="tab">
+                                <i class="fas fa-heart me-2"></i>Sentiment
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="cross-ref-tab" data-bs-toggle="tab" data-bs-target="#cross-ref" type="button" role="tab">
+                                <i class="fas fa-search me-2"></i>Cross-Reference
+                            </button>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content" id="analysisTabContent">
+                        <!-- Source Analysis Tab -->
+                        <div class="tab-pane fade show active" id="source" role="tabpanel">
+                            <div id="sourceAnalysis"></div>
+                        </div>
+
+                        <!-- Content Analysis Tab -->
+                        <div class="tab-pane fade" id="content" role="tabpanel">
+                            <div id="contentAnalysis"></div>
+                        </div>
+
+                        <!-- Sentiment Analysis Tab -->
+                        <div class="tab-pane fade" id="sentiment" role="tabpanel">
+                            <div id="sentimentAnalysis"></div>
+                        </div>
+
+                        <!-- Cross-Reference Tab -->
+                        <div class="tab-pane fade" id="cross-ref" role="tabpanel">
+                            <div id="crossReferenceAnalysis"></div>
+                        </div>
+                    </div>
+
+                    <!-- Bias Indicators -->
+                    <div id="biasSection" class="mb-4" style="display: none;">
+                        <h5><i class="fas fa-balance-scale text-info me-2"></i>Bias Indicators</h5>
+                        <div id="biasIndicators"></div>
+                    </div>
+
+                    <!-- Recommendations -->
+                    <div class="mb-4">
+                        <h5><i class="fas fa-lightbulb text-warning me-2"></i>Recommendations</h5>
+                        <div id="recommendations"></div>
+                    </div>
+
+                    <!-- Analysis Timestamp -->
+                    <div class="text-muted small">
+                        <i class="fas fa-clock me-1"></i>
+                        Analysis completed at: <span id="analysisTimestamp">-</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Error Alert -->
+        <div id="errorAlert" class="alert alert-danger" style="display: none;">
+            <i class="fas fa-exclamation-circle me-2"></i>
+            <span id="errorMessage"></span>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.1.3/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Toggle input sections based on analysis type
+        document.querySelectorAll('input[name="analysisType"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                if (this.value === 'url') {
+                    document.getElementById('urlInput').style.display = 'block';
+                    document.getElementById('textInput').style.display = 'none';
+                    document.getElementById('articleUrl').required = true;
+                    document.getElementById('articleTitle').required = false;
+                    document.getElementById('articleContent').required = false;
+                } else {
+                    document.getElementById('urlInput').style.display = 'none';
+                    document.getElementById('textInput').style.display = 'block';
+                    document.getElementById('articleUrl').required = false;
+                    document.getElementById('articleTitle').required = false;
+                    document.getElementById('articleContent').required = false;
+                }
+            });
+        });
+
+        // Form submission
+        document.getElementById('analysisForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            // Show loading state
+            document.querySelector('.loading').style.display = 'inline';
+            document.querySelector('.not-loading').style.display = 'none';
+            document.getElementById('resultsSection').style.display = 'none';
+            document.getElementById('errorAlert').style.display = 'none';
+            
+            const analysisType = document.querySelector('input[name="analysisType"]:checked').value;
+            let requestData = { type: analysisType };
+            
+            if (analysisType === 'url') {
+                requestData.url = document.getElementById('articleUrl').value;
+            } else {
+                requestData.title = document.getElementById('articleTitle').value;
+                requestData.content = document.getElementById('articleContent').value;
+                
+                if (!requestData.title && !requestData.content) {
+                    showError('Please provide either a title or content for analysis');
+                    return;
+                }
+            }
+            
+            try {
+                const response = await fetch('/analyze', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(requestData)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    displayResults(result.result);
+                } else {
+                    showError(result.error || 'Analysis failed');
+                }
+            } catch (error) {
+                showError('Network error: ' + error.message);
+            } finally {
+                // Hide loading state
+                document.querySelector('.loading').style.display = 'none';
+                document.querySelector('.not-loading').style.display = 'inline';
+            }
+        });
+        
+        function displayResults(result) {
+            // Overall credibility
+            const credibilityLevel = result.credibility_level;
+            const credibilityScore = result.overall_credibility_score;
+            const confidenceScore = result.confidence_score;
+            
+            document.getElementById('credibilityLevel').textContent = credibilityLevel;
+            document.getElementById('credibilityScore').textContent = credibilityScore.toFixed(2);
+            document.getElementById('confidenceScore').textContent = confidenceScore.toFixed(2);
+            
+            // Update progress bars and colors
+            const credibilityPercent = credibilityScore * 100;
+            const confidencePercent = confidenceScore * 100;
+            
+            const credibilityProgress = document.getElementById('credibilityProgress');
+            const credibilityLevelEl = document.getElementById('credibilityLevel');
+            
+            credibilityProgress.style.width = credibilityPercent + '%';
+            
+            // Set credibility color classes
+            credibilityLevelEl.className = 'me-3 mb-0 credibility-' + credibilityLevel.toLowerCase().replace(' ', '-');
+            
+            if (credibilityLevel === 'High') {
+                credibilityProgress.className = 'progress-bar bg-success';
+            } else if (credibilityLevel === 'Medium') {
+                credibilityProgress.className = 'progress-bar bg-warning';
+            } else if (credibilityLevel === 'Low') {
+                credibilityProgress.className = 'progress-bar bg-danger';
+            } else {
+                credibilityProgress.className = 'progress-bar bg-dark';
+            }
+            
+            document.getElementById('confidenceProgress').style.width = confidencePercent + '%';
+            
+            // Warning flags
+            if (result.warning_flags && result.warning_flags.length > 0) {
+                document.getElementById('warningSection').style.display = 'block';
+                document.getElementById('warningFlags').innerHTML = result.warning_flags
+                    .map(flag => `<span class="warning-flag"><i class="fas fa-exclamation-triangle me-1"></i>${flag}</span>`)
+                    .join('');
+            } else {
+                document.getElementById('warningSection').style.display = 'none';
+            }
+            
+            // Analysis details tabs
+            displaySourceAnalysis(result.source_credibility);
+            displayContentAnalysis(result.content_analysis);
+            displaySentimentAnalysis(result.sentiment_analysis);
+            displayCrossReference(result.cross_reference_results);
+            
+            // Bias indicators
+            if (result.bias_indicators && result.bias_indicators.length > 0) {
+                document.getElementById('biasSection').style.display = 'block';
+                document.getElementById('biasIndicators').innerHTML = result.bias_indicators
+                    .map(indicator => `<span class="bias-indicator">${indicator}</span>`)
+                    .join('');
+            } else {
+                document.getElementById('biasSection').style.display = 'none';
+            }
+            
+            // Recommendations
+            document.getElementById('recommendations').innerHTML = result.recommendations
+                .map(rec => `<div class="recommendation"><i class="fas fa-arrow-right me-2"></i>${rec}</div>`)
+                .join('');
+            
+            // Timestamp
+            document.getElementById('analysisTimestamp').textContent = new Date(result.analysis_timestamp).toLocaleString();
+            
+            // Show results
+            document.getElementById('resultsSection').style.display = 'block';
+        }
+        
+        function displaySourceAnalysis(sourceData) {
+            if (!sourceData) {
+                document.getElementById('sourceAnalysis').innerHTML = '<p class="text-muted">No source analysis available</p>';
+                return;
+            }
+            
+            let html = '';
+            
+            if (sourceData.domain) {
+                html += `<p><strong>Domain:</strong> ${sourceData.domain}</p>`;
+            }
+            
+            if (sourceData.is_https !== undefined) {
+                html += `<p><strong>HTTPS:</strong> ${sourceData.is_https ? '<span class="text-success">Yes</span>' : '<span class="text-danger">No</span>'}</p>`;
+            }
+            
+            if (sourceData.bias_check) {
+                html += `<p><strong>Credibility Rating:</strong> ${sourceData.bias_check.credibility || 'Unknown'}</p>`;
+                html += `<p><strong>Bias Rating:</strong> ${sourceData.bias_check.bias_rating || 'Unknown'}</p>`;
+            }
+            
+            document.getElementById('sourceAnalysis').innerHTML = html || '<p class="text-muted">No source analysis data available</p>';
+        }
+        
+        function displayContentAnalysis(contentData) {
+            if (!contentData) {
+                document.getElementById('contentAnalysis').innerHTML = '<p class="text-muted">No content analysis available</p>';
+                return;
+            }
+            
+            let html = '';
+            
+            if (contentData.word_count) {
+                html += `<p><strong>Word Count:</strong> ${contentData.word_count}</p>`;
+            }
+            
+            if (contentData.sentence_count) {
+                html += `<p><strong>Sentence Count:</strong> ${contentData.sentence_count}</p>`;
+            }
+            
+            if (contentData.keywords && contentData.keywords.length > 0) {
+                html += `<p><strong>Keywords:</strong> ${contentData.keywords.slice(0, 10).join(', ')}</p>`;
+            }
+            
+            if (contentData.suspicious_patterns && contentData.suspicious_patterns.length > 0) {
+                html += `<p><strong>Suspicious Patterns:</strong></p><ul>`;
+                contentData.suspicious_patterns.forEach(pattern => {
+                    html += `<li>${pattern}</li>`;
+                });
+                html += `</ul>`;
+            }
+            
+            document.getElementById('contentAnalysis').innerHTML = html || '<p class="text-muted">No content analysis data available</p>';
+        }
+        
+        function displaySentimentAnalysis(sentimentData) {
+            if (!sentimentData || sentimentData.error) {
+                document.getElementById('sentimentAnalysis').innerHTML = '<p class="text-muted">No sentiment analysis available</p>';
+                return;
+            }
+            
+            let html = '';
+            
+            if (sentimentData.sentiment) {
+                html += `<p><strong>Overall Sentiment:</strong> ${sentimentData.sentiment.charAt(0).toUpperCase() + sentimentData.sentiment.slice(1)}</p>`;
+            }
+            
+            if (sentimentData.polarity !== undefined) {
+                html += `<p><strong>Polarity:</strong> ${sentimentData.polarity.toFixed(2)} (-1 to 1)</p>`;
+            }
+            
+            if (sentimentData.subjectivity !== undefined) {
+                html += `<p><strong>Subjectivity:</strong> ${sentimentData.subjectivity.toFixed(2)} (0 to 1)</p>`;
+            }
+            
+            document.getElementById('sentimentAnalysis').innerHTML = html || '<p class="text-muted">No sentiment analysis data available</p>';
+        }
+        
+        function displayCrossReference(crossRefData) {
+            if (!crossRefData || crossRefData.error) {
+                document.getElementById('crossReferenceAnalysis').innerHTML = '<p class="text-muted">No cross-reference data available</p>';
+                return;
+            }
+            
+            let html = '';
+            
+            if (crossRefData.consensus_score !== undefined) {
+                html += `<p><strong>Consensus Score:</strong> ${crossRefData.consensus_score.toFixed(2)}/1.00</p>`;
+            }
+            
+            if (crossRefData.source_diversity !== undefined) {
+                html += `<p><strong>Source Diversity:</strong> ${crossRefData.source_diversity} sources</p>`;
+            }
+            
+            if (crossRefData.similar_articles && crossRefData.similar_articles.length > 0) {
+                html += `<p><strong>Similar Articles Found:</strong> ${crossRefData.similar_articles.length}</p>`;
+                html += '<ul>';
+                crossRefData.similar_articles.slice(0, 5).forEach(article => {
+                    html += `<li><strong>${article.source || 'Unknown'}:</strong> ${article.title || 'No title'}</li>`;
+                });
+                html += '</ul>';
+            }
+            
+            document.getElementById('crossReferenceAnalysis').innerHTML = html || '<p class="text-muted">No cross-reference data available</p>';
+        }
+        
+        function showError(message) {
+            document.getElementById('errorMessage').textContent = message;
+            document.getElementById('errorAlert').style.display = 'block';
+            document.querySelector('.loading').style.display = 'none';
+            document.querySelector('.not-loading').style.display = 'inline';
+        }
+    </script>
+</body>
+</html>
